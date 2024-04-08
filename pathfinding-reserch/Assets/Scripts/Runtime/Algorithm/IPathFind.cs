@@ -1,16 +1,22 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct PathfindResult
+public abstract class BasePathFind : MonoBehaviour
 {
-    public int dist;
-    public float time;
-    public List<Point> path;
-}
+    protected Coroutine routine;
 
-public interface IPathFind
-{
-    public PathfindResult FindPath(Map map, Vector2Int start, Vector2Int end);
-    public void FindPathVisualize(Map map, Vector2Int start, Vector2Int end);
+    public void FindPathVisualize(Vector2Int start, Vector2Int end)
+    {
+        routine = StartCoroutine(FindPathRoutine(start, end));
+    }
+
+    public void StopPathFind()
+    {
+        if(routine != null)
+            StopCoroutine(routine);
+    }
+
+    protected abstract IEnumerator FindPathRoutine(Vector2Int start, Vector2Int end);
 }

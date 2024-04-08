@@ -15,9 +15,9 @@ public class AlgorithmTypePanel : MonoBehaviour
         algorithmTypeButtons = GetComponentsInChildren<Button>();
 
         pathFinder
-            .ObserveEveryValueChanged(p => p.AlgorithmType)
-            .Subscribe(x => algorithmTypeButtons.For((b, i) => b.image.color = x == (AlgorithmType)i ? Color.yellow : Color.white));
+            .ObserveEveryValueChanged(p => p.PathFindType)
+            .Subscribe(x => algorithmTypeButtons.For((b, i) => b.image.color = x == (PathFindType)i ? Color.yellow : Color.white));
 
-        algorithmTypeButtons.For((b, i) => b.onClick.AddListener(() => pathFinder.AlgorithmType = (AlgorithmType)i));
+        algorithmTypeButtons.For((b, i) => b.onClick.AddListener(() => pathFinder.PathFindType = (PathFindType)i));
     }
 }

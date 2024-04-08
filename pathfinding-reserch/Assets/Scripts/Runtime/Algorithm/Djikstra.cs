@@ -1,40 +1,70 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Utils;
 
-public class Djikstra : IPathFind
+public class Djikstra : BasePathFind
 {
-    public PathfindResult FindPath(Map map, Vector2Int start, Vector2Int end)
+    private PathFinder pathFinder => PathFinder.Instance;
+    private Map map => Map.Instance;
+
+    protected override IEnumerator FindPathRoutine(Vector2Int start, Vector2Int end)
     {
-        PriorityQueue<Point, float> cloest = new();
-        cloest.Enqueue(map[start], 0);
+        PriorityQueue<Point, float> pq = new();
+        pq.Enqueue(map[start], 0);
+        map[start].Cost = 0;
 
         Point current;
         do
         {
-            current = cloest.Dequeue();
-            TrySetup(map[current.Coordinate + Vector2Int.up], current, cloest);
-            TrySetup(map[current.Coordinate + Vector2Int.down], current, cloest);
-            TrySetup(map[current.Coordinate + Vector2Int.left], current, cloest);
-            TrySetup(map[current.Coordinate + Vector2Int.right], current, cloest);
+            do 
+            {
+                current = pq.Dequeue();
+                if(current.IsJoined) current = null;
+            }
+            while(current == null);
+            if(current.Coord != start && current.Coord != end)
+                current.Color = Color.blue;
+            yield return new WaitForSeconds(pathFinder.WaitTime);
+            current.IsJoined = true;
+            
+            if(current.Coord == end) break;
+            
+            CheckPoint(end, current.Coord + Vector2Int.up, current, pq);
+            yield return new WaitForSeconds(pathFinder.WaitTime);
+            CheckPoint(end, current.Coord + Vector2Int.down, current, pq);
+            yield return new WaitForSeconds(pathFinder.WaitTime);
+            CheckPoint(end, current.Coord + Vector2Int.left, current, pq);
+            yield return new WaitForSeconds(pathFinder.WaitTime);
+            CheckPoint(end, current.Coord + Vector2Int.right, current, pq);
+            yield return new WaitForSeconds(pathFinder.WaitTime);
         }
-        while(cloest.Count != 0);
+        while(pq.Count != 0);
 
-
-        return new PathfindResult();
+        if(map[end].IsJoined)
+        {
+            var back = map[end];
+            while(back.Parent != null)
+            {
+                back = back.Parent;
+                if(back.Coord != start)
+                    back.Color = Color.magenta;
+            }
+        }
     }
 
-    public void FindPathVisualize(Map map, Vector2Int start, Vector2Int end)
+    private void CheckPoint(Vector2Int end, Vector2Int target, Point current, PriorityQueue<Point, float> pq)
     {
+        if(!map.ContainsCoord(target)) return;
+        if(map[target].IsJoined) return;
+        if(map[target].PointType == PointType.Wall) return;
 
-    }
-
-    private void TrySetup(Point point, Point current, PriorityQueue<Point, float> cloest)
-    {
-        if(point.IsJoined) return;
-
-        point.Cost = current.Cost + 1;
-        point.Parent = current;
-        cloest.Enqueue(point, point.Cost);
+        if(map[target].Cost > current.Cost + 1)
+        {
+            map[target].Cost = current.Cost + 1;
+            map[target].Parent = current;
+            if(target != end)
+                map[target].Color = Color.yellow;
+            pq.Enqueue(map[target], current.Cost + 1);
+        }
     }
 }

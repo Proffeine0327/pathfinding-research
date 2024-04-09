@@ -25,7 +25,6 @@ public class PathFinder : MonoBehaviour
 
     public void FindPath()
     {
-        Debug.Log(PathFindType);
         foreach(var a in pathFindAlgorithmTable.Values)
             a.StopPathFind();
         map.Initialize();
@@ -37,6 +36,6 @@ public class PathFinder : MonoBehaviour
         Instance = this;
         pathFindAlgorithmTable.Add(PathFindType.Djikstra, gameObject.AddComponent<Djikstra>());
         pathFindAlgorithmTable.Add(PathFindType.Astar, gameObject.AddComponent<Astar>());
-        pathFindAlgorithmTable.Add(PathFindType.Jps, gameObject.AddComponent<Djikstra>());
+        pathFindAlgorithmTable.Add(PathFindType.Jps, gameObject.AddComponent<JPS>());
     }
 }

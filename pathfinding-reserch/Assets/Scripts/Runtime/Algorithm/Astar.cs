@@ -22,23 +22,22 @@ public class Astar : BasePathFind
                 if (current.IsJoined) current = null;
             }
             while (current == null);
+            current.IsJoined = true;
             if (current.Coord != start && current.Coord != end)
                 current.Color = Color.blue;
             yield return new WaitForSeconds(pathFinder.WaitTime);
-            current.IsJoined = true;
-
             if (current.Coord == end) break;
 
-            CheckPoint(start, end, current.Coord + Vector2Int.up, current, pq);
+            CheckPoint(current.Coord + Vector2Int.up, current.Coord, end, pq);
             yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.down, current, pq);
+            CheckPoint(current.Coord + Vector2Int.down, current.Coord, end, pq);
             yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.left, current, pq);
+            CheckPoint(current.Coord + Vector2Int.left, current.Coord, end, pq);
             yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.right, current, pq);
+            CheckPoint(current.Coord + Vector2Int.right, current.Coord, end, pq);
             yield return new WaitForSeconds(pathFinder.WaitTime);
         }
-        while (pq.Count != 0);
+        while (pq.Count > 0);
 
         if (map[end].IsJoined)
         {
@@ -52,20 +51,20 @@ public class Astar : BasePathFind
         }
     }
 
-    private void CheckPoint(Vector2Int start, Vector2Int end, Vector2Int target, Point current, PriorityQueue<Point, float> pq)
+    private void CheckPoint(Vector2Int target, Vector2Int parent, Vector2Int end, PriorityQueue<Point, float> pq)
     {
         if (!map.ContainsCoord(target)) return;
         if (map[target].IsJoined) return;
         if (map[target].PointType == PointType.Wall) return;
 
-        var g = current.G + 1;
-        var h = Vector2.Distance(end, target);
+        var g = map[parent].G + 1;
+        var h = Vector2.Distance(end, target) * 1.25f;
         // var h = Mathf.Abs(end.x - target.x) + Mathf.Abs(end.y - target.y);
 
         if (map[target].G + h > g + h)
         {
             map[target].G = g;
-            map[target].Parent = current;
+            map[target].Parent = map[parent];
             if (target != end)
                 map[target].Color = Color.yellow;
             pq.Enqueue(map[target], g + h);

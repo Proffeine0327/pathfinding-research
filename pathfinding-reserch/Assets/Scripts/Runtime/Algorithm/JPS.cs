@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 
 public class JPS : BasePathFind
@@ -27,18 +28,34 @@ public class JPS : BasePathFind
             yield return new WaitForSeconds(pathFinder.WaitTime);
             current.IsJoined = true;
 
-            if (current.Coord == end) break;
+            if (current.Coord != start && current.Coord != end)
+                map[current.Coord].Color = Color.blue;
 
-            CheckPoint(start, end, current.Coord + Vector2Int.up, current, pq);
-            yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.down, current, pq);
-            yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.left, current, pq);
-            yield return new WaitForSeconds(pathFinder.WaitTime);
-            CheckPoint(start, end, current.Coord + Vector2Int.right, current, pq);
-            yield return new WaitForSeconds(pathFinder.WaitTime);
+            if (current.JPSDirection == Vector2Int.zero)
+            {
+                var isEnd = false;
+                JumpDiagonal(current.Coord, new(1, 1), end, pq, ref isEnd);
+                if (isEnd) break;
+                yield return new WaitForSeconds(pathFinder.WaitTime);
+                JumpDiagonal(current.Coord, new(-1, 1), end, pq, ref isEnd);
+                if (isEnd) break;
+                yield return new WaitForSeconds(pathFinder.WaitTime);
+                JumpDiagonal(current.Coord, new(1, -1), end, pq, ref isEnd);
+                if (isEnd) break;
+                yield return new WaitForSeconds(pathFinder.WaitTime);
+                JumpDiagonal(current.Coord, new(-1, -1), end, pq, ref isEnd);
+                if (isEnd) break;
+                yield return new WaitForSeconds(pathFinder.WaitTime);
+            }
+            else
+            {
+                var isEnd = false;
+                JumpDiagonal(current.Coord, current.JPSDirection, end, pq, ref isEnd);
+                if (isEnd) break;
+                yield return new WaitForSeconds(pathFinder.WaitTime);
+            }
         }
-        while (pq.Count != 0);
+        while (pq.Count > 0);
 
         if (map[end].IsJoined)
         {
@@ -52,23 +69,127 @@ public class JPS : BasePathFind
         }
     }
 
-    private void CheckPoint(Vector2Int start, Vector2Int end, Vector2Int target, Point current, PriorityQueue<Point, float> pq)
+    private void JumpStraight(Vector2Int start, Vector2Int dir, Vector2Int end, PriorityQueue<Point, float> pq, ref bool isFindEnd)
     {
-        if (!map.ContainsCoord(target)) return;
-        if (map[target].IsJoined) return;
-        if (map[target].PointType == PointType.Wall) return;
-
-        var g = current.G + 1;
-        var h = Vector2.Distance(end, target);
-        // var h = Mathf.Abs(end.x - target.x) + Mathf.Abs(end.y - target.y);
-
-        if (map[target].G + h > g + h)
+        var current = start;
+        do
         {
-            map[target].G = g;
-            map[target].Parent = current;
-            if (target != end)
-                map[target].Color = Color.yellow;
-            pq.Enqueue(map[target], g + h);
+            if (!map.ContainsCoord(current)) break;
+            if (map[current].PointType == PointType.Wall) break;
+
+            if (current == end)
+            {
+                map[end].Parent = map[start];
+                map[end].IsJoined = true;
+                isFindEnd = true;
+                return;
+            }
+
+            if (current != start && current != end)
+                map[current].Color = Color.gray;
+
+            if (dir.x != 0) //horizontal
+            {
+                var upWall =
+                    map.ContainsCoord(new(current.x, current.y + 1)) &&
+                    map[new(current.x, current.y + 1)].PointType == PointType.Wall &&
+                    map.ContainsCoord(new(current.x + dir.x, current.y + 1)) &&
+                    map[new(current.x + dir.x, current.y + 1)].PointType != PointType.Wall;
+
+                var downWall =
+                    map.ContainsCoord(new(current.x, current.y - 1)) &&
+                    map[new(current.x, current.y - 1)].PointType == PointType.Wall &&
+                    map.ContainsCoord(new(current.x + dir.x, current.y - 1)) &&
+                    map[new(current.x + dir.x, current.y - 1)].PointType != PointType.Wall;
+
+                if (upWall) CheckPoint(new(current.x + dir.x, current.y + 1), start, end, new(dir.x, 1), pq);
+                if (downWall) CheckPoint(new(current.x + dir.x, current.y - 1), start, end, new(dir.x, -1), pq);
+            }
+            else //vertical
+            {
+                var leftWall =
+                    map.ContainsCoord(new(current.x - 1, current.y)) &&
+                    map[new(current.x - 1, current.y)].PointType == PointType.Wall &&
+                    map.ContainsCoord(new(current.x - 1, current.y + dir.y)) &&
+                    map[new(current.x - 1, current.y + dir.y)].PointType != PointType.Wall;
+
+                var rightWall =
+                    map.ContainsCoord(new(current.x + 1, current.y)) &&
+                    map[new(current.x + 1, current.y)].PointType == PointType.Wall &&
+                    map.ContainsCoord(new(current.x + 1, current.y + dir.y)) &&
+                    map[new(current.x + 1, current.y + dir.y)].PointType != PointType.Wall;
+
+                if (leftWall) CheckPoint(new(current.x - 1, current.y + dir.y), start, end, new(-1, dir.y), pq);
+                if (rightWall) CheckPoint(new(current.x + 1, current.y + dir.y), start, end, new(1, dir.y), pq);
+            }
+            current += dir;
+        }
+        while (true);
+    }
+
+    private void JumpDiagonal(Vector2Int start, Vector2Int dir, Vector2Int end, PriorityQueue<Point, float> pq, ref bool isFindEnd)
+    {
+        var current = start;
+        do
+        {
+            JumpStraight(current, new(dir.x, 0), end, pq, ref isFindEnd);
+            if (isFindEnd) return;
+            JumpStraight(current, new(0, dir.y), end, pq, ref isFindEnd);
+            if (isFindEnd) return;
+
+            current += dir;
+            if (!map.ContainsCoord(current)) break;
+            if (map[current].PointType == PointType.Wall) break;
+
+            if (current == end)
+            {
+                map[end].Parent = map[start];
+                map[end].IsJoined = true;
+                isFindEnd = true;
+                return;
+            }
+
+            if (current != start && current != end)
+                map[current].Color = Color.gray;
+
+            map[current].G = map[start].G + Vector2.Distance(start, current);
+            map[current].Parent = map[start];
+
+            var wall1 =
+                map.ContainsCoord(new(current.x, current.y - dir.y)) &&
+                map[new(current.x, current.y - dir.y)].PointType == PointType.Wall &&
+                map.ContainsCoord(new(current.x + dir.x, current.y - dir.y)) &&
+                map[new(current.x + dir.x, current.y - dir.y)].PointType != PointType.Wall;
+            var wall2 =
+                map.ContainsCoord(new(current.x - dir.x, current.y)) &&
+                map[new(current.x - dir.x, current.y)].PointType == PointType.Wall &&
+                map.ContainsCoord(new(current.x - dir.x, current.y + dir.y)) &&
+                map[new(current.x - dir.x, current.y + dir.y)].PointType != PointType.Wall;
+
+            if (wall1) CheckPoint(new(current.x + dir.x, current.y - dir.y), start, end, new(dir.x, -dir.y), pq);
+            if (wall2) CheckPoint(new(current.x - dir.x, current.y + dir.y), start, end, new(-dir.x, dir.y), pq);
+            
+        }
+        while (true);
+    }
+
+    private void CheckPoint(Vector2Int current, Vector2Int parent, Vector2Int end, Vector2Int dir, PriorityQueue<Point, float> pq)
+    {
+        if (!map.ContainsCoord(current)) return;
+        if (map[current].IsJoined) return;
+        if (map[current].PointType == PointType.Wall) return;
+
+        var g = map[parent].G + Vector2.Distance(parent, current);
+        var h = Vector2.Distance(end, current);
+
+        if (map[current].G + h > g + h)
+        {
+            map[current].G = g;
+            map[current].Parent = map[parent];
+            map[current].JPSDirection = dir;
+            if (current != end)
+                map[current].Color = Color.yellow;
+            pq.Enqueue(map[current], g + h);
         }
     }
 }

@@ -20,7 +20,7 @@ public class Map : MonoBehaviour
         {
             for (int x = 0; x < size.x; x++)
             {
-                map[y, x].G = float.MaxValue;
+                map[y, x].G = 1000000000;
                 map[y, x].IsJoined = false;
                 map[y, x].Parent = null;
                 map[y, x].JPSDirection = Vector2Int.zero;
@@ -96,7 +96,7 @@ public class Map : MonoBehaviour
     }
 
     public bool ContainsCoord(int x, int y)
-        => !(y < 0 || y > size.y - 1 || x < 0 || x > size.x - 1);
+        => x >= 0 && x < size.x && y >= 0 && y < size.y;
 
     public bool ContainsCoord(Vector2Int coord)
         => ContainsCoord(coord.x, coord.y);

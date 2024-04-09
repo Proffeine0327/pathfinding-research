@@ -11,7 +11,7 @@ public class Djikstra : BasePathFind
     {
         PriorityQueue<Point, float> pq = new();
         pq.Enqueue(map[start], 0);
-        map[start].Cost = 0;
+        map[start].G = 0;
 
         Point current;
         do
@@ -58,13 +58,13 @@ public class Djikstra : BasePathFind
         if(map[target].IsJoined) return;
         if(map[target].PointType == PointType.Wall) return;
 
-        if(map[target].Cost > current.Cost + 1)
+        if(map[target].G > current.G + 1)
         {
-            map[target].Cost = current.Cost + 1;
+            map[target].G = current.G + 1;
             map[target].Parent = current;
             if(target != end)
                 map[target].Color = Color.yellow;
-            pq.Enqueue(map[target], current.Cost + 1);
+            pq.Enqueue(map[target], current.G + 1);
         }
     }
 }

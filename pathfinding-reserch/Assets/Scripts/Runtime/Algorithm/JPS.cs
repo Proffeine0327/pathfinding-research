@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Astar : BasePathFind
+public class JPS : BasePathFind
 {
     private PathFinder pathFinder => PathFinder.Instance;
     private Map map => Map.Instance;

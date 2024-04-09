@@ -39,9 +39,4 @@ public class PathFinder : MonoBehaviour
         pathFindAlgorithmTable.Add(PathFindType.Astar, gameObject.AddComponent<Astar>());
         pathFindAlgorithmTable.Add(PathFindType.Jps, gameObject.AddComponent<Djikstra>());
     }
-
-    private void Update()
-    {
-        Debug.Log(WaitTime);
-    }
 }

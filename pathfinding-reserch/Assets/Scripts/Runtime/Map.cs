@@ -20,9 +20,10 @@ public class Map : MonoBehaviour
         {
             for (int x = 0; x < size.x; x++)
             {
-                map[y, x].Cost = float.MaxValue;
+                map[y, x].G = float.MaxValue;
                 map[y, x].IsJoined = false;
                 map[y, x].Parent = null;
+                map[y, x].JPSDirection = Vector2Int.zero;
                 SetPoint(map[y, x].PointType, new(x, y));
             }
         }

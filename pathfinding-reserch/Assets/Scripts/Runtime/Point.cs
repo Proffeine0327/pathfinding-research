@@ -15,7 +15,8 @@ public class Point : MonoBehaviour, IPointerDownHandler, IPointerEnterHandler
     private SpriteRenderer spriteRenderer;
 
     public bool IsJoined { get; set; }
-    public float Cost { get; set; }
+    public float G { get; set; }
+    public Vector2Int JPSDirection { get; set; }
     public Point Parent { get; set; }
     public PointType PointType { get; set; }
     public Vector2Int Coord { get; set; }
